@@ -1,0 +1,42 @@
+services:
+  db:
+    image: timescale/timescaledb:2.17.0-pg16
+    restart: always
+    volumes:
+      - counter_app_db:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT}:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    restart: always
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASS}
+
+  all-in-one:
+    image: jaegertracing/all-in-one:1.60
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    # https://www.jaegertracing.io/docs/1.60/getting-started/
+    # List of ports can be found in the link above
+    ports:
+      # - 6831:6831/udp
+      # - 6832:6832/udp
+      - 5778:5778
+      - 16686:16686
+      - 4317:4317
+      # - 4318:4318
+      - 14250:14250
+      - 14268:14268
+      - 14269:14269
+      # - 9411:9411
+
+volumes:
+  counter_app_db:
+    external: true
