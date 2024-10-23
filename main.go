@@ -6,6 +6,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/DaffaFA/counter-counter_service/api/routes"
+	"github.com/DaffaFA/counter-counter_service/pkg/item"
+	"github.com/DaffaFA/counter-counter_service/pkg/setting"
 	"github.com/DaffaFA/counter-counter_service/utils"
 	"github.com/bytedance/sonic"
 	"github.com/exaring/otelpgx"
@@ -59,6 +62,12 @@ func main() {
 		log.Panic().AnErr("error", err).Msg("failed to create trace exporter")
 	}
 
+	itemRepo := item.NewRepo(db)
+	itemService := item.NewService(itemRepo)
+
+	settingRepo := setting.NewRepo(db)
+	settingService := setting.NewService(settingRepo)
+
 	app := fiber.New(fiber.Config{
 		JSONEncoder: sonic.Marshal,
 		JSONDecoder: sonic.Unmarshal,
@@ -101,7 +110,10 @@ func main() {
 		return c.SendString("Hello, World 👋!")
 	})
 
-	// urlPrefix := app.Group("/api/v1")
+	urlPrefix := app.Group("/api/v1/counter-service")
+
+	routes.ItemRouter(urlPrefix, itemService)
+	routes.SettingRoutes(urlPrefix, settingService)
 
 	app.Listen(fmt.Sprintf(":%s", viper.GetString("PORT")))
 }

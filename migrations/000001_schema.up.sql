@@ -57,7 +57,9 @@ create table counter.items
             references counter.settings,
     size_id  integer not null
         constraint items_settings_id_fk_4
-            references counter.settings
+            references counter.settings,
+    created_at timestamp with time zone default now(),
+    updated_at timestamp with time zone default now()
 );
 
 alter table counter.items
@@ -65,9 +67,9 @@ alter table counter.items
 
 create table counter.item_scans
 (
-    time       timestamp with time zone,
-    machine_id integer,
-    qr_code_id integer
+    time         timestamp with time zone,
+    machine_id   integer not null,
+    qr_code_code varchar not null
 );
 
 alter table counter.item_scans
