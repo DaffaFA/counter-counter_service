@@ -13,4 +13,4 @@ INSERT INTO counter.settings (id, setting_type_alias, value, parent_id) VALUES (
 INSERT INTO counter.settings (id, setting_type_alias, value, parent_id) VALUES (DEFAULT, 'color', 'black', 4);
 INSERT INTO counter.settings (id, setting_type_alias, value, parent_id) VALUES (DEFAULT, 'size', 'XL', 4);
 
-INSERT INTO counter.items VALUES (123456789, 3, 4, 6, 5);
+INSERT INTO counter.items VALUES (123456789, 3, 4, 5, 6);

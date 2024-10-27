@@ -3,7 +3,6 @@ package item
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/DaffaFA/counter-counter_service/pkg/entities"
 	"github.com/DaffaFA/counter-counter_service/utils"
@@ -117,8 +116,6 @@ func (r *repository) CreateItem(ctx context.Context, item *entities.Item) error 
 	if err != nil {
 		return err
 	}
-
-	log.Println(sqln, args)
 
 	if _, err := r.DB.Exec(ctx, sqln, args...); err != nil {
 		return err

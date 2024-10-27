@@ -11,6 +11,7 @@ func SettingRoutes(app fiber.Router, service setting.Service) {
 
 	routes.Get("/:alias", handlers.GetSettings(service))
 	routes.Post("/:alias", handlers.CreateSetting(service))
-	routes.Delete("/:alias/:id", handlers.DeleteSetting(service))
+	routes.Get("/:alias/:id", handlers.GetSettings(service))
 
+	app.Get("/monitor/machine/:id", handlers.GetMachineDetail(service))
 }

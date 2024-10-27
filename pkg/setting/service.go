@@ -11,6 +11,7 @@ type Service interface {
 	FetchSetting(context.Context, string, *entities.FetchFilter) (entities.SettingPagination, error)
 	CreateSetting(context.Context, string, *entities.Setting) error
 	DeleteSetting(context.Context, string, int) error
+	FetchMachineDetail(context.Context, int) (entities.MachineDetail, error)
 }
 
 type service struct {
@@ -43,4 +44,11 @@ func (s *service) DeleteSetting(ctx context.Context, settingAlias string, settin
 	defer span.End()
 
 	return s.repository.DeleteSetting(ctx, settingAlias, settingID)
+}
+
+func (s *service) FetchMachineDetail(ctx context.Context, machineID int) (entities.MachineDetail, error) {
+	ctx, span := utils.Tracer.Start(ctx, "item.service.FetchMachineDetail")
+	defer span.End()
+
+	return s.repository.FetchMachineDetail(ctx, machineID)
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/DaffaFA/counter-counter_service/api/routes"
 	"github.com/DaffaFA/counter-counter_service/pkg/item"
+	"github.com/DaffaFA/counter-counter_service/pkg/item_scan"
 	"github.com/DaffaFA/counter-counter_service/pkg/setting"
 	"github.com/DaffaFA/counter-counter_service/utils"
 	"github.com/bytedance/sonic"
@@ -35,6 +36,7 @@ func init() {
 	viper.AddConfigPath(".")
 	viper.SetConfigFile(".env")
 	viper.ReadInConfig()
+	viper.AutomaticEnv()
 }
 
 func main() {
@@ -67,6 +69,9 @@ func main() {
 
 	settingRepo := setting.NewRepo(db)
 	settingService := setting.NewService(settingRepo)
+
+	itemScanRepo := item_scan.NewRepo(db)
+	itemScanService := item_scan.NewService(itemScanRepo)
 
 	app := fiber.New(fiber.Config{
 		JSONEncoder: sonic.Marshal,
@@ -114,6 +119,7 @@ func main() {
 
 	routes.ItemRouter(urlPrefix, itemService)
 	routes.SettingRoutes(urlPrefix, settingService)
+	routes.MonitorRoutes(urlPrefix, itemScanService)
 
 	app.Listen(fmt.Sprintf(":%s", viper.GetString("PORT")))
 }

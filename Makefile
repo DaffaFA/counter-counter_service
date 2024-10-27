@@ -3,6 +3,15 @@ include .env
 # ~~~ Database Migrations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 POSTGRESQLDSN := "postgres://$(DB_USER):$(DB_PASS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable"
+IMAGE_TAG = "11.12.10.8:5000/counter/counter-service"
+
+docker-build:
+	docker build -t $(IMAGE_TAG) .
+
+docker-push:
+	docker push $(IMAGE_TAG)
+
+docker-build-and-push: docker-build docker-push
 
 migrate-up: $(MIGRATE) ## Apply all (or N up) migrations.
 	@ read -p "How many migration you wants to perform (default value: [all]): " N; \

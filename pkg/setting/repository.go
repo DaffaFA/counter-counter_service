@@ -16,6 +16,7 @@ type Repository interface {
 	FetchSetting(context.Context, string, *entities.FetchFilter) (entities.SettingPagination, error)
 	CreateSetting(context.Context, string, *entities.Setting) error
 	DeleteSetting(context.Context, string, int) error
+	FetchMachineDetail(context.Context, int) (entities.MachineDetail, error)
 }
 
 type repository struct {
@@ -41,6 +42,7 @@ func (r *repository) FetchSetting(ctx context.Context, settingAlias string, filt
 		"id",
 		"value",
 		"setting_type_alias",
+		"parent_id",
 	).From("counter.settings")
 
 	if settingAlias != "all" {
@@ -117,4 +119,27 @@ func (r *repository) DeleteSetting(ctx context.Context, settingAlias string, set
 	}
 
 	return nil
+}
+
+func (r *repository) FetchMachineDetail(ctx context.Context, machineID int) (entities.MachineDetail, error) {
+	ctx, span := utils.Tracer.Start(ctx, "setting.repository.FetchMachineDetail")
+	defer span.End()
+
+	res := entities.MachineDetail{}
+
+	query := psql.Select("f.value", "m.value").
+		From("counter.settings m").
+		LeftJoin("counter.settings f ON m.parent_id = f.id").
+		Where(squirrel.Eq{"m.id": machineID})
+
+	sqln, args, err := query.ToSql()
+	if err != nil {
+		return res, err
+	}
+
+	if err := r.DB.QueryRow(ctx, sqln, args...).Scan(&res.Factory, &res.Machine); err != nil {
+		return res, err
+	}
+
+	return res, nil
 }
