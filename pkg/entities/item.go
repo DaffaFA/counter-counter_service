@@ -16,3 +16,11 @@ type ItemPagination struct {
 	Items []Item `json:"items"`
 	Total int    `json:"total"`
 }
+
+type ItemCreateParam struct {
+	Code  string `json:"code,omitempty" db:"code"`
+	Buyer string `json:"buyer,omitempty"`
+	Style string `json:"style,omitempty"`
+	Color string `json:"color,omitempty"`
+	Size  string `json:"size,omitempty"`
+}

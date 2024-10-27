@@ -14,8 +14,8 @@ var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
 type Repository interface {
 	FetchItem(context.Context, *entities.FetchFilter) (entities.ItemPagination, error)
-	CreateItem(context.Context, *entities.Item) error
-	UpdateItem(context.Context, string, *entities.Item) error
+	CreateItem(context.Context, *entities.ItemCreateParam) error
+	UpdateItem(context.Context, string, *entities.ItemCreateParam) error
 }
 
 type repository struct {
@@ -103,38 +103,107 @@ func (r *repository) FetchItem(ctx context.Context, filter *entities.FetchFilter
 	return res, nil
 }
 
-// curl -X POST http://localhost:8080/item -d '{"buyer_id": 1, "style_id": 1, "color_id": 1, "size_id": 1}'
-func (r *repository) CreateItem(ctx context.Context, item *entities.Item) error {
+func (r *repository) CreateItem(ctx context.Context, item *entities.ItemCreateParam) error {
 	ctx, span := utils.Tracer.Start(ctx, "item.repository.CreateItem")
 	defer span.End()
 
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	settingQuery := "INSERT INTO counter.settings (setting_type_alias, value, parent_id) VALUES ($1, $2, $3) ON CONFLICT (setting_type_alias, value, parent_id) DO UPDATE SET value = $2 RETURNING id"
+
+	var buyerID, styleID, colorID, sizeID int
+
+	if err := tx.QueryRow(ctx, settingQuery, "buyer", item.Buyer, nil).
+		Scan(&buyerID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
+	if err := tx.QueryRow(ctx, settingQuery, "style", item.Style, buyerID).
+		Scan(&styleID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
+	if err := tx.QueryRow(ctx, settingQuery, "color", item.Color, styleID).
+		Scan(&colorID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
+	if err := tx.QueryRow(ctx, settingQuery, "size", item.Size, colorID).
+		Scan(&sizeID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
 	query := psql.Insert("counter.items").
 		Columns("code", "buyer_id", "style_id", "color_id", "size_id").
-		Values(item.Code, item.BuyerID, item.StyleID, item.ColorID, item.SizeID)
+		Values(item.Code, buyerID, styleID, colorID, sizeID)
 
 	sqln, args, err := query.ToSql()
 	if err != nil {
 		return err
 	}
 
-	if _, err := r.DB.Exec(ctx, sqln, args...); err != nil {
+	if _, err := tx.Exec(ctx, sqln, args...); err != nil {
 		return err
 	}
 
-	return err
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // example request
 // curl -X PUT http://localhost:8080/item/1 -d '{"buyer_id": 1, "style_id": 1, "color_id": 1, "size_id": 1}'
-func (r *repository) UpdateItem(ctx context.Context, code string, item *entities.Item) error {
+func (r *repository) UpdateItem(ctx context.Context, code string, item *entities.ItemCreateParam) error {
 	ctx, span := utils.Tracer.Start(ctx, "item.repository.UpdateItem")
 	defer span.End()
 
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	settingQuery := "INSERT INTO counter.settings (setting_type_alias, value, parent_id) VALUES ($1, $2, $3) ON CONFLICT (setting_type_alias, value, parent_id) DO UPDATE SET value = $2 RETURNING id"
+
+	var buyerID, styleID, colorID, sizeID int
+
+	if err := tx.QueryRow(ctx, settingQuery, "buyer", item.Buyer, nil).
+		Scan(&buyerID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
+	if err := tx.QueryRow(ctx, settingQuery, "style", item.Style, buyerID).
+		Scan(&styleID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
+	if err := tx.QueryRow(ctx, settingQuery, "color", item.Color, styleID).
+		Scan(&colorID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
+	if err := tx.QueryRow(ctx, settingQuery, "size", item.Size, colorID).
+		Scan(&sizeID); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
 	query := psql.Update("counter.items").
-		Set("buyer_id", item.BuyerID).
-		Set("style_id", item.StyleID).
-		Set("color_id", item.ColorID).
-		Set("size_id", item.SizeID).
+		Set("buyer_id", buyerID).
+		Set("style_id", styleID).
+		Set("color_id", colorID).
+		Set("size_id", sizeID).
 		Where(squirrel.Eq{"code": code})
 
 	sqln, args, err := query.ToSql()
@@ -142,7 +211,11 @@ func (r *repository) UpdateItem(ctx context.Context, code string, item *entities
 		return err
 	}
 
-	if _, err := r.DB.Exec(ctx, sqln, args...); err != nil {
+	if _, err := tx.Exec(ctx, sqln, args...); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
 

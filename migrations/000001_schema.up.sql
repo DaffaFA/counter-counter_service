@@ -35,7 +35,7 @@ create table counter.settings
     value              varchar,
     parent_id          integer,
     constraint settings_pk_2
-        unique (setting_type_alias, value)
+        unique (setting_type_alias, value, parent_id)
 );
 
 alter table counter.settings

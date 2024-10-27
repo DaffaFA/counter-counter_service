@@ -9,8 +9,8 @@ import (
 
 type Service interface {
 	FetchItem(context.Context, *entities.FetchFilter) (entities.ItemPagination, error)
-	CreateItem(context.Context, *entities.Item) error
-	UpdateItem(context.Context, string, *entities.Item) error
+	CreateItem(context.Context, *entities.ItemCreateParam) error
+	UpdateItem(context.Context, string, *entities.ItemCreateParam) error
 }
 
 type service struct {
@@ -31,14 +31,14 @@ func (s *service) FetchItem(ctx context.Context, filter *entities.FetchFilter) (
 	return s.repository.FetchItem(ctx, filter)
 }
 
-func (s *service) CreateItem(ctx context.Context, item *entities.Item) error {
+func (s *service) CreateItem(ctx context.Context, item *entities.ItemCreateParam) error {
 	ctx, span := utils.Tracer.Start(ctx, "item.service.CreateItem")
 	defer span.End()
 
 	return s.repository.CreateItem(ctx, item)
 }
 
-func (s *service) UpdateItem(ctx context.Context, code string, item *entities.Item) error {
+func (s *service) UpdateItem(ctx context.Context, code string, item *entities.ItemCreateParam) error {
 	ctx, span := utils.Tracer.Start(ctx, "item.service.UpdateItem")
 	defer span.End()
 

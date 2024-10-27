@@ -70,7 +70,7 @@ func CreateItem(service item.Service) fiber.Handler {
 		ctx, span := utils.Tracer.Start(c.UserContext(), fmt.Sprintf("%s %s", c.Method(), c.OriginalURL()))
 		defer span.End()
 
-		var item entities.Item
+		var item entities.ItemCreateParam
 
 		if err := c.BodyParser(&item); err != nil {
 			span.RecordError(err)
@@ -99,7 +99,7 @@ func UpdateItem(service item.Service) fiber.Handler {
 
 		code := c.Params("code")
 
-		var item entities.Item
+		var item entities.ItemCreateParam
 
 		if err := c.BodyParser(&item); err != nil {
 			span.RecordError(err)

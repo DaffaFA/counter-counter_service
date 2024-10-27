@@ -39,11 +39,13 @@ func (r *repository) FetchSetting(ctx context.Context, settingAlias string, filt
 	entities.SetDefaultFilter(filter)
 
 	rawData := psql.Select(
-		"id",
-		"value",
-		"setting_type_alias",
-		"parent_id",
-	).From("counter.settings")
+		"s.id",
+		"s.value",
+		"s.setting_type_alias",
+		"s.parent_id",
+		"sp.value as parent_value",
+	).From("counter.settings s").
+		LeftJoin("counter.settings sp ON s.parent_id = sp.id")
 
 	if settingAlias != "all" {
 		rawData = rawData.Where(squirrel.Eq{"setting_type_alias": settingAlias})
