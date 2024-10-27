@@ -10,7 +10,7 @@ import (
 type Service interface {
 	FetchLatestScan(context.Context, int) ([]entities.LatestScan, error)
 	ScanItem(context.Context, int, string) (entities.ScannedItem, error)
-	ResetScanCounter(context.Context, string) error
+	UndoLastCounter(context.Context, string, string) error
 }
 
 type service struct {
@@ -38,9 +38,9 @@ func (s *service) ScanItem(ctx context.Context, machineID int, qrCode string) (e
 	return s.repository.ScanItem(ctx, machineID, qrCode)
 }
 
-func (s *service) ResetScanCounter(ctx context.Context, qrCode string) error {
-	ctx, span := utils.Tracer.Start(ctx, "item_scan.service.ResetScanCounter")
+func (s *service) UndoLastCounter(ctx context.Context, time string, qrCode string) error {
+	ctx, span := utils.Tracer.Start(ctx, "item_scan.service.UndoLastCounter")
 	defer span.End()
 
-	return s.repository.ResetScanCounter(ctx, qrCode)
+	return s.repository.UndoLastCounter(ctx, time, qrCode)
 }

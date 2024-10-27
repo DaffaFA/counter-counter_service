@@ -11,5 +11,5 @@ func MonitorRoutes(app fiber.Router, service item_scan.Service) {
 
 	routes.Get("/machine/:id/latest-scan", handlers.GetMachineLatestScan(service))
 	routes.Post("/machine/:id", handlers.ScanItem(service))
-	routes.Post("/item/:code/reset", handlers.ResetScanCounter(service))
+	routes.Post("/item/:code/reset", handlers.UndoLastCounter(service))
 }

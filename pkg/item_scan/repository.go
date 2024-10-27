@@ -15,7 +15,7 @@ var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 type Repository interface {
 	FetchLatestScan(context.Context, int) ([]entities.LatestScan, error)
 	ScanItem(context.Context, int, string) (entities.ScannedItem, error)
-	ResetScanCounter(context.Context, string) error
+	UndoLastCounter(context.Context, string, string) error
 }
 
 type repository struct {
@@ -83,10 +83,10 @@ func (r *repository) ScanItem(ctx context.Context, machineId int, code string) (
 
 	insertItemScan := psql.Insert("counter.item_scans").
 		Columns("time", "machine_id", "qr_code_code").
-		Values("NOW()", machineId, code).Prefix("WITH scanned_item AS (").Suffix("RETURNING qr_code_code)")
+		Values("NOW()", machineId, code).Prefix("WITH scanned_item AS (").Suffix("RETURNING *)")
 
 	data := psql.
-		Select("i.code", "b.value as buyer", "s.value as style", "c.value as color", "z.value as size", "(SELECT COUNT(time) + 1 FROM counter.item_scans is2 WHERE is2.qr_code_code = $3) AS count").
+		Select("si.time", "i.code", "b.value as buyer", "s.value as style", "c.value as color", "z.value as size", "(SELECT COUNT(time) + 1 FROM counter.item_scans is2 WHERE is2.qr_code_code = $3) AS count").
 		From("scanned_item si").
 		LeftJoin("counter.items i ON si.qr_code_code = i.code").
 		LeftJoin("counter.settings b ON i.buyer_id = b.id").
@@ -102,7 +102,7 @@ func (r *repository) ScanItem(ctx context.Context, machineId int, code string) (
 		return scannedItem, err
 	}
 
-	if err := tx.QueryRow(ctx, sqln, args...).Scan(&scannedItem.QrCode, &scannedItem.Buyer, &scannedItem.Style, &scannedItem.Color, &scannedItem.Size, &scannedItem.Count); err != nil {
+	if err := tx.QueryRow(ctx, sqln, args...).Scan(&scannedItem.Time, &scannedItem.QrCode, &scannedItem.Buyer, &scannedItem.Style, &scannedItem.Color, &scannedItem.Size, &scannedItem.Count); err != nil {
 		return scannedItem, err
 	}
 
@@ -111,8 +111,11 @@ func (r *repository) ScanItem(ctx context.Context, machineId int, code string) (
 	return scannedItem, nil
 }
 
-func (r *repository) ResetScanCounter(ctx context.Context, code string) error {
-	query := psql.Delete("counter.item_scans").Where(squirrel.Eq{"qr_code_code": code})
+func (r *repository) UndoLastCounter(ctx context.Context, time string, code string) error {
+	query := psql.Delete("counter.item_scans").Where(squirrel.And{
+		squirrel.Eq{"qr_code_code": code},
+		squirrel.Eq{"time": time},
+	})
 
 	sqln, args, err := query.ToSql()
 	if err != nil {

@@ -86,8 +86,8 @@ func ScanItem(service item_scan.Service) fiber.Handler {
 	}
 }
 
-// ResetScanCounter(context.Context, string) error
-func ResetScanCounter(service item_scan.Service) fiber.Handler {
+// UndoLastCounter(context.Context, string) error
+func UndoLastCounter(service item_scan.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx, span := utils.Tracer.Start(c.UserContext(), fmt.Sprintf("%s %s", c.Method(), c.OriginalURL()))
 		defer span.End()
@@ -99,14 +99,21 @@ func ResetScanCounter(service item_scan.Service) fiber.Handler {
 			})
 		}
 
-		if err := service.ResetScanCounter(ctx, code); err != nil {
+		var params entities.UndoLastCounterParam
+		if err := c.BodyParser(&params); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		if err := service.UndoLastCounter(ctx, params.Time, code); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": err.Error(),
 			})
 		}
 
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"message": "Scan counter reset successfully",
+			"message": "undo last counter success",
 		})
 	}
 }

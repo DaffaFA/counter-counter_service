@@ -21,14 +21,19 @@ type LatestScan struct {
 }
 
 type ScannedItem struct {
-	QrCode string `json:"qr_code,omitempty" db:"qr_code"`
-	Buyer  string `json:"buyer,omitempty" db:"buyer"`
-	Style  string `json:"style,omitempty" db:"style"`
-	Size   string `json:"size,omitempty" db:"size"`
-	Color  string `json:"color,omitempty" db:"color"`
-	Count  int    `json:"count,omitempty" db:"count"`
+	Time   time.Time `json:"time,omitempty" db:"time"`
+	QrCode string    `json:"qr_code,omitempty" db:"qr_code"`
+	Buyer  string    `json:"buyer,omitempty" db:"buyer"`
+	Style  string    `json:"style,omitempty" db:"style"`
+	Size   string    `json:"size,omitempty" db:"size"`
+	Color  string    `json:"color,omitempty" db:"color"`
+	Count  int       `json:"count,omitempty" db:"count"`
 }
 
 type ScanItemParam struct {
 	Code string `json:"code"`
+}
+
+type UndoLastCounterParam struct {
+	Time string `json:"time"`
 }
