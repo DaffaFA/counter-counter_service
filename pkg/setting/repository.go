@@ -48,15 +48,14 @@ func (r *repository) FetchSetting(ctx context.Context, settingAlias string, filt
 		LeftJoin("counter.settings sp ON s.parent_id = sp.id")
 
 	if settingAlias != "all" {
-		rawData = rawData.Where(squirrel.Eq{"setting_type_alias": settingAlias})
+		rawData = rawData.Where(squirrel.Eq{"s.setting_type_alias": settingAlias})
 	}
 
 	if filter.Query != "" {
 		rawData = rawData.Where(squirrel.Or{
-			squirrel.ILike{
-				"setting_type_alias": fmt.Sprintf("%%%s%%", filter.Query),
-				"value":              fmt.Sprintf("%%%s%%", filter.Query),
-			},
+			squirrel.ILike{"s.setting_type_alias": fmt.Sprintf("%%%s%%", filter.Query)},
+			squirrel.ILike{"s.value": fmt.Sprintf("%%%s%%", filter.Query)},
+			squirrel.ILike{"sp.value": fmt.Sprintf("%%%s%%", filter.Query)},
 		})
 	}
 
