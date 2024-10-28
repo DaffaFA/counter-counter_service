@@ -15,7 +15,7 @@ var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 type Repository interface {
 	FetchLatestScan(context.Context, int) ([]entities.LatestScan, error)
 	ScanItem(context.Context, int, string) (entities.ScannedItem, error)
-	UndoLastCounter(context.Context, string, string) error
+	UndoLastCounter(context.Context, string, string) (entities.ScannedItem, error)
 }
 
 type repository struct {
@@ -111,20 +111,48 @@ func (r *repository) ScanItem(ctx context.Context, machineId int, code string) (
 	return scannedItem, nil
 }
 
-func (r *repository) UndoLastCounter(ctx context.Context, time string, code string) error {
-	query := psql.Delete("counter.item_scans").Where(squirrel.And{
+func (r *repository) UndoLastCounter(ctx context.Context, time string, code string) (entities.ScannedItem, error) {
+	var scannedItem entities.ScannedItem
+
+	tx, err := r.DB.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return scannedItem, err
+	}
+
+	var rowExists bool
+	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM counter.item_scans WHERE qr_code_code = $1 AND time = $2)", code, time).Scan(&rowExists); err != nil {
+		return entities.ScannedItem{}, err
+	}
+
+	if !rowExists {
+		return entities.ScannedItem{}, errors.New("the item already undone")
+	}
+
+	deleteItemScan := psql.Delete("counter.item_scans").Where(squirrel.And{
 		squirrel.Eq{"qr_code_code": code},
 		squirrel.Eq{"time": time},
-	})
+	}).Prefix("WITH scanned_item AS (").Suffix("RETURNING *)")
 
-	sqln, args, err := query.ToSql()
+	data := psql.
+		Select("si.time", "i.code", "b.value as buyer", "s.value as style", "c.value as color", "z.value as size", "(SELECT COUNT(time) - 1 FROM counter.item_scans is2 WHERE is2.qr_code_code = $1) AS count").
+		From("scanned_item si").
+		LeftJoin("counter.items i ON si.qr_code_code = i.code").
+		LeftJoin("counter.settings b ON i.buyer_id = b.id").
+		LeftJoin("counter.settings s ON i.style_id = s.id").
+		LeftJoin("counter.settings c ON i.color_id = c.id").
+		LeftJoin("counter.settings z ON i.size_id = z.id").
+		PrefixExpr(deleteItemScan)
+
+	sqln, args, err := data.ToSql()
 	if err != nil {
-		return err
+		return scannedItem, err
 	}
 
-	if _, err := r.DB.Exec(ctx, sqln, args...); err != nil {
-		return err
+	if err := tx.QueryRow(ctx, sqln, args...).Scan(&scannedItem.Time, &scannedItem.QrCode, &scannedItem.Buyer, &scannedItem.Style, &scannedItem.Color, &scannedItem.Size, &scannedItem.Count); err != nil {
+		return scannedItem, err
 	}
 
-	return nil
+	tx.Commit(ctx)
+
+	return scannedItem, nil
 }

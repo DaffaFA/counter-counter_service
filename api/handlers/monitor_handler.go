@@ -106,14 +106,13 @@ func UndoLastCounter(service item_scan.Service) fiber.Handler {
 			})
 		}
 
-		if err := service.UndoLastCounter(ctx, params.Time, code); err != nil {
+		scans, err := service.UndoLastCounter(ctx, params.Time, code)
+		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": err.Error(),
 			})
 		}
 
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"message": "undo last counter success",
-		})
+		return c.Status(fiber.StatusOK).JSON(scans)
 	}
 }
