@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/DaffaFA/counter-counter_service/api/routes"
+	"github.com/DaffaFA/counter-counter_service/pkg/analytic"
 	"github.com/DaffaFA/counter-counter_service/pkg/item"
 	"github.com/DaffaFA/counter-counter_service/pkg/item_scan"
 	"github.com/DaffaFA/counter-counter_service/pkg/setting"
@@ -73,6 +74,9 @@ func main() {
 	itemScanRepo := item_scan.NewRepo(db)
 	itemScanService := item_scan.NewService(itemScanRepo)
 
+	analyticRepo := analytic.NewRepo(db)
+	analyticService := analytic.NewService(analyticRepo)
+
 	app := fiber.New(fiber.Config{
 		JSONEncoder: sonic.Marshal,
 		JSONDecoder: sonic.Unmarshal,
@@ -120,6 +124,7 @@ func main() {
 	routes.ItemRouter(urlPrefix, itemService)
 	routes.SettingRoutes(urlPrefix, settingService)
 	routes.MonitorRoutes(urlPrefix, itemScanService)
+	routes.AnalyticRouter(urlPrefix, analyticService)
 
 	app.Listen(fmt.Sprintf(":%s", viper.GetString("PORT")))
 }

@@ -37,7 +37,6 @@ func GetSettings(service setting.Service) fiber.Handler {
 	}
 }
 
-// curl -X POST -H "Content-Type: application/json" -d '{"key": "key", "value": "value"}' http://localhost:3000/api/v1/setting/alias
 func CreateSetting(service setting.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx, span := utils.Tracer.Start(c.UserContext(), fmt.Sprintf("%s %s", c.Method(), c.OriginalURL()))
