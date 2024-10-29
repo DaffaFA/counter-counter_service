@@ -3,6 +3,7 @@ package item
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/DaffaFA/counter-counter_service/pkg/entities"
 	"github.com/DaffaFA/counter-counter_service/utils"
@@ -16,6 +17,7 @@ type Repository interface {
 	FetchItem(context.Context, *entities.FetchFilter) (entities.ItemPagination, error)
 	CreateItem(context.Context, *entities.ItemCreateParam) error
 	UpdateItem(context.Context, string, *entities.ItemCreateParam) error
+	FetchCountChart(context.Context, *entities.DashboardAnalyticFilter) ([]entities.ItemCountChart, error)
 }
 
 type repository struct {
@@ -116,7 +118,7 @@ func (r *repository) CreateItem(ctx context.Context, item *entities.ItemCreatePa
 
 	var buyerID, styleID, colorID, sizeID int
 
-	if err := tx.QueryRow(ctx, settingQuery, "buyer", item.Buyer, nil).
+	if err := tx.QueryRow(ctx, settingQuery, "buyer", item.Buyer, 0).
 		Scan(&buyerID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -134,7 +136,7 @@ func (r *repository) CreateItem(ctx context.Context, item *entities.ItemCreatePa
 		return err
 	}
 
-	if err := tx.QueryRow(ctx, settingQuery, "size", item.Size, colorID).
+	if err := tx.QueryRow(ctx, settingQuery, "size", item.Size, styleID).
 		Scan(&sizeID); err != nil {
 		tx.Rollback(ctx)
 		return err
@@ -160,8 +162,6 @@ func (r *repository) CreateItem(ctx context.Context, item *entities.ItemCreatePa
 	return nil
 }
 
-// example request
-// curl -X PUT http://localhost:8080/item/1 -d '{"buyer_id": 1, "style_id": 1, "color_id": 1, "size_id": 1}'
 func (r *repository) UpdateItem(ctx context.Context, code string, item *entities.ItemCreateParam) error {
 	ctx, span := utils.Tracer.Start(ctx, "item.repository.UpdateItem")
 	defer span.End()
@@ -220,4 +220,57 @@ func (r *repository) UpdateItem(ctx context.Context, code string, item *entities
 	}
 
 	return err
+}
+
+func (r *repository) FetchCountChart(ctx context.Context, filter *entities.DashboardAnalyticFilter) ([]entities.ItemCountChart, error) {
+	from, err := time.Parse(time.RFC3339, filter.From)
+	if err != nil {
+		return nil, err
+	}
+
+	to, err := time.Parse(time.RFC3339, filter.To)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, span := utils.Tracer.Start(ctx, "item.repository.FetchCountChart")
+	defer span.End()
+
+	time := to.Sub(from)
+
+	interval := "1 hour"
+
+	if time.Hours() > 24 {
+		interval = "1 day"
+	} else if time.Hours() > 168 {
+		interval = "1 week"
+	} else if time.Hours() > 720 {
+		interval = "1 month"
+	}
+
+	query := `
+	SELECT time_bucket_gapfill($3, time) as bucket, COUNT(time) as data
+	FROM counter.item_scans
+	WHERE time BETWEEN $1 AND $2
+	GROUP BY bucket
+	`
+
+	rows, err := r.DB.Query(ctx, query, from, to, interval)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []entities.ItemCountChart
+
+	for rows.Next() {
+		var count entities.ItemCountChart
+		if err := rows.Scan(&count.Bucket, &count.Count); err != nil {
+			return nil, err
+		}
+
+		res = append(res, count)
+	}
+
+	return res, nil
 }

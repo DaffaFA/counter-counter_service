@@ -12,5 +12,6 @@ func ItemRouter(app fiber.Router, service item.Service) {
 	item.Get("/", handlers.GetItems(service))
 	item.Post("/", handlers.CreateItem(service))
 	item.Get("/:code", handlers.GetItem(service))
+	item.Get("/:code/count-chart", handlers.GetCountChart(service))
 	item.Put("/:code", handlers.UpdateItem(service))
 }

@@ -120,3 +120,31 @@ func UpdateItem(service item.Service) fiber.Handler {
 		})
 	}
 }
+
+func GetCountChart(service item.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		ctx, span := utils.Tracer.Start(c.UserContext(), fmt.Sprintf("%s %s", c.Method(), c.OriginalURL()))
+		defer span.End()
+
+		var queryFilter entities.DashboardAnalyticFilter
+
+		if err := c.QueryParser(&queryFilter); err != nil {
+			span.RecordError(err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		queryFilter.SetDefault()
+
+		chart, err := service.FetchCountChart(ctx, &queryFilter)
+		if err != nil {
+			span.RecordError(err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(chart)
+	}
+}

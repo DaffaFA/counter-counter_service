@@ -11,6 +11,7 @@ type Service interface {
 	FetchItem(context.Context, *entities.FetchFilter) (entities.ItemPagination, error)
 	CreateItem(context.Context, *entities.ItemCreateParam) error
 	UpdateItem(context.Context, string, *entities.ItemCreateParam) error
+	FetchCountChart(context.Context, *entities.DashboardAnalyticFilter) ([]entities.ItemCountChart, error)
 }
 
 type service struct {
@@ -43,4 +44,11 @@ func (s *service) UpdateItem(ctx context.Context, code string, item *entities.It
 	defer span.End()
 
 	return s.repository.UpdateItem(ctx, code, item)
+}
+
+func (s *service) FetchCountChart(ctx context.Context, filter *entities.DashboardAnalyticFilter) ([]entities.ItemCountChart, error) {
+	ctx, span := utils.Tracer.Start(ctx, "item.service.FetchCountChart")
+	defer span.End()
+
+	return s.repository.FetchCountChart(ctx, filter)
 }

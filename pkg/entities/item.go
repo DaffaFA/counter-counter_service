@@ -1,5 +1,7 @@
 package entities
 
+import "time"
+
 type Item struct {
 	Code    string   `json:"code,omitempty" db:"code"`
 	BuyerID int      `json:"buyer_id,omitempty" db:"buyer_id"`
@@ -23,4 +25,9 @@ type ItemCreateParam struct {
 	Style string `json:"style,omitempty"`
 	Color string `json:"color,omitempty"`
 	Size  string `json:"size,omitempty"`
+}
+
+type ItemCountChart struct {
+	Bucket time.Time `json:"bucket"`
+	Count  *int      `json:"count"`
 }

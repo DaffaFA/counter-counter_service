@@ -67,6 +67,7 @@ func (r *repository) FetchLatestScan(ctx context.Context, machineID int) ([]enti
 func (r *repository) ScanItem(ctx context.Context, machineId int, code string) (entities.ScannedItem, error) {
 	tx, err := r.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
+		tx.Rollback(ctx)
 		return entities.ScannedItem{}, err
 	}
 	defer tx.Rollback(ctx)
@@ -74,10 +75,12 @@ func (r *repository) ScanItem(ctx context.Context, machineId int, code string) (
 	// check if qr code exists
 	var qrCodeExists bool
 	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM counter.items WHERE code = $1)", code).Scan(&qrCodeExists); err != nil {
+		tx.Rollback(ctx)
 		return entities.ScannedItem{}, err
 	}
 
 	if !qrCodeExists {
+		tx.Rollback(ctx)
 		return entities.ScannedItem{}, errors.New("QR Code not found")
 	}
 
@@ -99,10 +102,12 @@ func (r *repository) ScanItem(ctx context.Context, machineId int, code string) (
 
 	sqln, args, err := data.ToSql()
 	if err != nil {
+		tx.Rollback(ctx)
 		return scannedItem, err
 	}
 
 	if err := tx.QueryRow(ctx, sqln, args...).Scan(&scannedItem.Time, &scannedItem.QrCode, &scannedItem.Buyer, &scannedItem.Style, &scannedItem.Color, &scannedItem.Size, &scannedItem.Count); err != nil {
+		tx.Rollback(ctx)
 		return scannedItem, err
 	}
 
@@ -121,10 +126,12 @@ func (r *repository) UndoLastCounter(ctx context.Context, time string, code stri
 
 	var rowExists bool
 	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM counter.item_scans WHERE qr_code_code = $1 AND time = $2)", code, time).Scan(&rowExists); err != nil {
+		tx.Rollback(ctx)
 		return entities.ScannedItem{}, err
 	}
 
 	if !rowExists {
+		tx.Rollback(ctx)
 		return entities.ScannedItem{}, errors.New("the item already undone")
 	}
 
@@ -145,10 +152,12 @@ func (r *repository) UndoLastCounter(ctx context.Context, time string, code stri
 
 	sqln, args, err := data.ToSql()
 	if err != nil {
+		tx.Rollback(ctx)
 		return scannedItem, err
 	}
 
 	if err := tx.QueryRow(ctx, sqln, args...).Scan(&scannedItem.Time, &scannedItem.QrCode, &scannedItem.Buyer, &scannedItem.Style, &scannedItem.Color, &scannedItem.Size, &scannedItem.Count); err != nil {
+		tx.Rollback(ctx)
 		return scannedItem, err
 	}
 
