@@ -7,7 +7,7 @@ type FetchFilter struct {
 	Limit  uint64   `json:"limit,omitempty"`
 	Query  string   `json:"query,omitempty"`
 	Sort   []string `json:"sort,omitempty"`
-	ID     int64    `json:"-"`
+	ID     int      `json:"-"`
 	Alias  string   `json:"-"`
 }
 

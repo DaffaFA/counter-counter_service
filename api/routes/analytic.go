@@ -10,5 +10,7 @@ func AnalyticRouter(app fiber.Router, service analytic.Service) {
 	route := app.Group("/analytic")
 
 	route.Get("/", handlers.GetAnalyticItems(service))
+	route.Get("/:style_id", handlers.GetAnalyticItemsByID(service))
 	route.Get("/:style_id/chart", handlers.GetCountChart(service))
+	route.Get("/:style_id/factory-agg", handlers.GetAggregateByFactory(service))
 }

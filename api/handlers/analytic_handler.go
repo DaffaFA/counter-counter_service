@@ -100,3 +100,53 @@ func GetCountChart(service analytic.Service) fiber.Handler {
 		return c.Status(fiber.StatusOK).JSON(chart)
 	}
 }
+
+func GetAnalyticItemsByID(service analytic.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		ctx, span := utils.Tracer.Start(c.UserContext(), fmt.Sprintf("%s %s", c.Method(), c.OriginalURL()))
+		defer span.End()
+
+		styleId, err := c.ParamsInt("style_id", -1)
+		if err != nil || styleId == -1 {
+			span.RecordError(err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		item, err := service.FetchAnalyticItemsByID(ctx, styleId)
+		if err != nil {
+			span.RecordError(err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(item)
+	}
+}
+
+func GetAggregateByFactory(service analytic.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		ctx, span := utils.Tracer.Start(c.UserContext(), fmt.Sprintf("%s %s", c.Method(), c.OriginalURL()))
+		defer span.End()
+
+		styleId, err := c.ParamsInt("style_id", -1)
+		if err != nil || styleId == -1 {
+			span.RecordError(err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		factory, err := service.FetchAggregateByFactory(ctx, styleId)
+		if err != nil {
+			span.RecordError(err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(factory)
+	}
+}

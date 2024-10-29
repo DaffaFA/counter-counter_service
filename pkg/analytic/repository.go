@@ -17,6 +17,7 @@ var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 type Repository interface {
 	FetchAnalyticItems(context.Context, *entities.FetchFilter) (entities.AnalyticItemPagination, error)
 	FetchCountChart(context.Context, int, *entities.DashboardAnalyticFilter) ([]entities.ItemCountChart, error)
+	FetchAggregateByFactory(context.Context, int) ([]entities.AggregateByFactory, error)
 }
 
 type repository struct {
@@ -56,11 +57,11 @@ func (r *repository) FetchAnalyticItems(ctx context.Context, filter *entities.Fe
 		}
 	}
 
-	if filter.Alias != "" {
-		rawData = rawData.Where(squirrel.Eq{"i.code": filter.Alias})
+	if filter.ID != 0 {
+		rawData = rawData.Where(squirrel.Eq{"s.id": filter.ID})
 	}
 
-	if filter.Alias == "" && filter.Query != "" {
+	if filter.ID == 0 && filter.Query != "" {
 		rawData = rawData.Where(squirrel.Or{
 			squirrel.ILike{"b.value": fmt.Sprintf("%%%s%%", filter.Query)},
 			squirrel.ILike{"s.value": fmt.Sprintf("%%%s%%", filter.Query)},
@@ -147,4 +148,52 @@ func (r *repository) FetchCountChart(ctx context.Context, styleId int, filter *e
 	}
 
 	return res, nil
+}
+
+func (r *repository) FetchAggregateByFactory(ctx context.Context, factoryId int) ([]entities.AggregateByFactory, error) {
+	query := `
+		WITH raw_data AS (SELECT f.value as factory, i.code, c.value as color, z.value as size, count(si.time) as total
+											FROM counter.settings f
+															LEFT JOIN counter.settings m ON m.parent_id = f.id
+															LEFT JOIN counter.item_scans si ON si.machine_id = m.id
+															LEFT JOIN counter.items i ON si.qr_code_code = i.code
+															LEFT JOIN counter.settings b ON b.id = i.buyer_id
+															LEFT JOIN counter.settings c ON c.id = i.color_id
+															LEFT JOIN counter.settings z ON z.id = i.size_id
+											WHERE f.setting_type_alias = 'factory'
+											AND i.style_id = $1
+											GROUP BY f.value, i.code, c.value, z.value),
+				grouped AS (SELECT factory,
+														jsonb_agg(json_build_object(
+																		'code', code,
+																		'color', color,
+																		'size', size,
+																		'count', total
+																			)) as rows,
+														sum(total)   as total
+										FROM raw_data
+										GROUP BY factory)
+		SELECT *
+		FROM grouped
+	`
+
+	var res []entities.AggregateByFactory
+
+	rows, err := r.DB.Query(ctx, query, factoryId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var agg entities.AggregateByFactory
+		if err := rows.Scan(&agg.Factory, &agg.Rows, &agg.Total); err != nil {
+			return nil, err
+		}
+
+		res = append(res, agg)
+	}
+
+	return res, nil
+
 }

@@ -18,3 +18,16 @@ type AnalyticItemPagination struct {
 	Items []AnalyticItem `json:"items"`
 	Total int            `json:"total"`
 }
+
+type AggregateByFactory_Row struct {
+	Code  string `json:"code"`
+	Size  string `json:"size"`
+	Color string `json:"color"`
+	Count int    `json:"count"`
+}
+
+type AggregateByFactory struct {
+	Factory string                   `json:"factory"`
+	Rows    []AggregateByFactory_Row `json:"rows"`
+	Total   int                      `json:"total"`
+}
