@@ -49,6 +49,7 @@ func (r *repository) FetchItem(ctx context.Context, filter *entities.FetchFilter
 		"row_to_json(s) as style",
 		"row_to_json(c) as color",
 		"row_to_json(z) as size",
+		"i.created_at",
 	).From("counter.items i").
 		LeftJoin("counter.settings b ON i.buyer_id = b.id").
 		LeftJoin("counter.settings s ON i.style_id = s.id").
@@ -85,7 +86,7 @@ func (r *repository) FetchItem(ctx context.Context, filter *entities.FetchFilter
 	pagination := psql.Select("*").
 		From("raw_data").
 		Limit(filter.Limit).
-		Offset(filter.Cursor*filter.Limit - filter.Limit).
+		Offset(filter.Cursor * filter.Limit).
 		PrefixExpr(rawData).Prefix(", with_pagination AS (").Suffix(")")
 
 	query := psql.Select("(SELECT COUNT(*) FROM raw_data) as total",
@@ -111,6 +112,7 @@ func (r *repository) CreateItem(ctx context.Context, item *entities.ItemCreatePa
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback(ctx)
 
 	settingQuery := "INSERT INTO counter.settings (setting_type_alias, value, parent_id) VALUES ($1, $2, $3) ON CONFLICT (setting_type_alias, value, parent_id) DO UPDATE SET value = $2 RETURNING id"
 
@@ -168,6 +170,7 @@ func (r *repository) UpdateItem(ctx context.Context, code string, item *entities
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback(ctx)
 
 	settingQuery := "INSERT INTO counter.settings (setting_type_alias, value, parent_id) VALUES ($1, $2, $3) ON CONFLICT (setting_type_alias, value, parent_id) DO UPDATE SET value = $2 RETURNING id"
 

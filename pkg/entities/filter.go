@@ -1,6 +1,8 @@
 package entities
 
-import "time"
+import (
+	"time"
+)
 
 type FetchFilter struct {
 	Cursor uint64   `json:"cursor,omitempty"`
@@ -12,10 +14,6 @@ type FetchFilter struct {
 }
 
 func SetDefaultFilter(filter *FetchFilter) {
-	if filter.Cursor < 1 {
-		filter.Cursor = 1
-	}
-
 	if filter.Limit < 1 {
 		filter.Limit = 12
 	}

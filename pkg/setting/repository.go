@@ -65,7 +65,7 @@ func (r *repository) FetchSetting(ctx context.Context, settingAlias string, filt
 	pagination := psql.Select("*").
 		From("raw_data").
 		Limit(filter.Limit).
-		Offset(filter.Cursor*filter.Limit - filter.Limit).
+		Offset(filter.Cursor * filter.Limit).
 		PrefixExpr(rawData).Prefix(", with_pagination AS (").Suffix(")")
 
 	query := psql.Select("(SELECT COUNT(*) FROM raw_data) as total",

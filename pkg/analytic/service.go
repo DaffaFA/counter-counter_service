@@ -47,7 +47,7 @@ func (s *service) FetchAnalyticItemsByID(ctx context.Context, styleId int) (enti
 	items, err := s.repository.FetchAnalyticItems(ctx, &entities.FetchFilter{
 		ID:     styleId,
 		Limit:  1,
-		Cursor: 1,
+		Cursor: 0,
 	})
 	if err != nil {
 		return entities.AnalyticItem{}, err
