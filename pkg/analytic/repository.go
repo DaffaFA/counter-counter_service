@@ -36,7 +36,7 @@ func (r *repository) FetchAnalyticItems(ctx context.Context, filter *entities.Fe
 
 	rawData := psql.Select(
 		"s.id as id",
-		"s.name as style",
+		"s.name || '-' || s.destination as style",
 		"b.value as buyer",
 		"s.amount as amount",
 	).
@@ -60,7 +60,7 @@ func (r *repository) FetchAnalyticItems(ctx context.Context, filter *entities.Fe
 	if filter.ID == 0 && filter.Query != "" {
 		rawData = rawData.Where(squirrel.Or{
 			squirrel.ILike{"b.value": fmt.Sprintf("%%%s%%", filter.Query)},
-			squirrel.ILike{"s.name": fmt.Sprintf("%%%s%%", filter.Query)},
+			squirrel.ILike{"s.name || '-' || s.destination": fmt.Sprintf("%%%s%%", filter.Query)},
 		})
 	}
 
@@ -189,5 +189,4 @@ func (r *repository) FetchAggregateByFactory(ctx context.Context, factoryId int)
 	}
 
 	return res, nil
-
 }
