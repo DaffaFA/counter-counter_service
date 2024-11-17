@@ -52,7 +52,7 @@ func (r *repository) FetchItem(ctx context.Context, filter *entities.FetchFilter
 		"i.created_at",
 	).From("counter.items i").
 		LeftJoin("counter.settings b ON i.buyer_id = b.id").
-		LeftJoin("counter.settings s ON i.style_id = s.id").
+		LeftJoin("counter.styles s ON i.style_id = s.id").
 		LeftJoin("counter.settings c ON i.color_id = c.id").
 		LeftJoin("counter.settings z ON i.size_id = z.id")
 
@@ -74,7 +74,7 @@ func (r *repository) FetchItem(ctx context.Context, filter *entities.FetchFilter
 		rawData = rawData.Where(squirrel.Or{
 			squirrel.ILike{"i.code": fmt.Sprintf("%%%s%%", filter.Query)},
 			squirrel.ILike{"b.value": fmt.Sprintf("%%%s%%", filter.Query)},
-			squirrel.ILike{"s.value": fmt.Sprintf("%%%s%%", filter.Query)},
+			squirrel.ILike{"s.name": fmt.Sprintf("%%%s%%", filter.Query)},
 			squirrel.ILike{"c.value": fmt.Sprintf("%%%s%%", filter.Query)},
 			squirrel.ILike{"z.value": fmt.Sprintf("%%%s%%", filter.Query)},
 		})
