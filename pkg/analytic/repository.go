@@ -3,7 +3,6 @@ package analytic
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/DaffaFA/counter-counter_service/pkg/entities"
@@ -86,8 +85,6 @@ func (r *repository) FetchAnalyticItems(ctx context.Context, filter *entities.Fe
 	if err != nil {
 		return res, err
 	}
-
-	log.Println(sqln, args)
 
 	if err := r.DB.QueryRow(ctx, sqln, args...).Scan(&res.Total, &res.Items); err != nil {
 		return res, err

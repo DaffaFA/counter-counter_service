@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/contrib/propagators/jaeger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
@@ -33,8 +33,9 @@ func InitTracerProvider(ctx context.Context, res *resource.Resource, conn *grpc.
 	)
 	otel.SetTracerProvider(tracerProvider)
 
+	p := jaeger.Jaeger{}
 	// Set global propagator to tracecontext (the default is no-op).
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	otel.SetTextMapPropagator(p)
 
 	Tracer = tracerProvider.Tracer(viper.GetString("SERVICE_NAME"))
 

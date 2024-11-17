@@ -7,6 +7,8 @@ import (
 	"github.com/DaffaFA/counter-counter_service/pkg/item"
 	"github.com/DaffaFA/counter-counter_service/utils"
 	"github.com/gofiber/fiber/v2"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 func GetItem(service item.Service) fiber.Handler {
@@ -41,7 +43,9 @@ func GetItem(service item.Service) fiber.Handler {
 
 func GetItems(service item.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		ctx, span := utils.Tracer.Start(c.UserContext(), fmt.Sprintf("%s %s", c.Method(), c.OriginalURL()))
+		ctx := otel.GetTextMapPropagator().Extract(c.UserContext(), propagation.HeaderCarrier(c.GetReqHeaders()))
+
+		ctx, span := utils.Tracer.Start(ctx, fmt.Sprintf("%s %s", c.Method(), c.OriginalURL()))
 		defer span.End()
 
 		var queryFilter entities.FetchFilter
