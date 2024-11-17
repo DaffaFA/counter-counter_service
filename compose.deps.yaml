@@ -21,12 +21,14 @@ services:
 
   all-in-one:
     image: jaegertracing/all-in-one:1.60
-    environment:
-      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    command: --collector.otlp.http.cors.allowed-origins http://localhost:4080 --collector.otlp.http.cors.allowed-headers *
+    # environment:
+    #   - COLLECTOR_ZIPKIN_HOST_PORT=:9411
     ports:
       - 5778:5778
       - 16686:16686
       - 4317:4317
+      - 4318:4318
       - 14250:14250
       - 14268:14268
       - 14269:14269
