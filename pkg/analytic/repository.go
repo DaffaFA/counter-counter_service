@@ -36,15 +36,12 @@ func (r *repository) FetchAnalyticItems(ctx context.Context, filter *entities.Fe
 
 	rawData := psql.Select(
 		"s.id as id",
-		"s.value as style",
+		"s.name as style",
 		"b.value as buyer",
-		"count(si.time) as amount",
+		"s.amount as amount",
 	).
-		From("counter.settings s").
-		LeftJoin("counter.settings b ON s.parent_id = b.id").
-		LeftJoin("counter.item_scans si ON si.qr_code_code IN (SELECT code FROM counter.items WHERE style_id = s.id)").
-		Where(squirrel.Eq{"s.setting_type_alias": "style"}).
-		GroupBy("s.id", "b.value", "s.value")
+		From("counter.styles s").
+		LeftJoin("counter.settings b ON s.buyer_id = b.id")
 
 	if len(filter.Sort) > 0 {
 		for _, sort := range filter.Sort {
@@ -63,7 +60,7 @@ func (r *repository) FetchAnalyticItems(ctx context.Context, filter *entities.Fe
 	if filter.ID == 0 && filter.Query != "" {
 		rawData = rawData.Where(squirrel.Or{
 			squirrel.ILike{"b.value": fmt.Sprintf("%%%s%%", filter.Query)},
-			squirrel.ILike{"s.value": fmt.Sprintf("%%%s%%", filter.Query)},
+			squirrel.ILike{"s.name": fmt.Sprintf("%%%s%%", filter.Query)},
 		})
 	}
 
