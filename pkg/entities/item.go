@@ -22,11 +22,12 @@ type ItemPagination struct {
 }
 
 type ItemCreateParam struct {
-	Code  string `json:"code,omitempty" db:"code"`
-	Buyer string `json:"buyer,omitempty"`
-	Style string `json:"style,omitempty"`
-	Color string `json:"color,omitempty"`
-	Size  string `json:"size,omitempty"`
+	Code        string `json:"code,omitempty" db:"code"`
+	Buyer       string `json:"buyer,omitempty"`
+	Style       string `json:"style,omitempty"`
+	Destination string `json:"destination,omitempty"`
+	Color       string `json:"color,omitempty"`
+	Size        string `json:"size,omitempty"`
 }
 
 type ItemCountChart struct {

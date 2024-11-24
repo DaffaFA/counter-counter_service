@@ -74,7 +74,7 @@ func (r *repository) FetchItem(ctx context.Context, filter *entities.FetchFilter
 		rawData = rawData.Where(squirrel.Or{
 			squirrel.ILike{"i.code": fmt.Sprintf("%%%s%%", filter.Query)},
 			squirrel.ILike{"b.value": fmt.Sprintf("%%%s%%", filter.Query)},
-			squirrel.ILike{"s.name": fmt.Sprintf("%%%s%%", filter.Query)},
+			squirrel.ILike{"s.name || '-' || s.destination": fmt.Sprintf("%%%s%%", filter.Query)},
 			squirrel.ILike{"c.value": fmt.Sprintf("%%%s%%", filter.Query)},
 			squirrel.ILike{"z.value": fmt.Sprintf("%%%s%%", filter.Query)},
 		})
@@ -124,7 +124,7 @@ func (r *repository) CreateItem(ctx context.Context, item *entities.ItemCreatePa
 		return err
 	}
 
-	if err := tx.QueryRow(ctx, settingQuery, "style", item.Style, buyerID).
+	if err := tx.QueryRow(ctx, "INSERT INTO counter.styles (buyer_id, name, destination, amount) VALUES ($1, $2, $3, $4) ON CONFLICT (buyer_id, name, destination) DO UPDATE SET destination = $3 RETURNING id", buyerID, item.Style, item.Destination, 0).
 		Scan(&styleID); err != nil {
 		tx.Rollback(ctx)
 		return err
